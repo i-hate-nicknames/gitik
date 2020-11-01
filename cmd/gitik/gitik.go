@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/i-hate-nicknames/gitik/packages/commands"
 
 func main() {
-	fmt.Println("VCS be here soon")
+	commands.Execute()
 }
