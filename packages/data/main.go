@@ -36,6 +36,16 @@ func HashObject(fileName string) error {
 	return hashAndStore(data)
 }
 
+// GetObject retrieves an object stored by HashObject under its object ID (oid)
+// This is the retrieve process of the data stored by HashObject
+func GetObject(oid string) ([]byte, error) {
+	data, err := ioutil.ReadFile(filepath.Join(gitDir, oid))
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 func hashAndStore(data []byte) error {
 	hash := sha1.Sum(data)
 	buf := bytes.NewBuffer(hash[:])
