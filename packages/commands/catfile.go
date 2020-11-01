@@ -20,7 +20,7 @@ var catFileCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		data, err := data.GetObject(args[0])
+		data, err := data.GetObject(args[0], data.TypeBlob)
 		if err != nil {
 			log.Fatal(err)
 		}

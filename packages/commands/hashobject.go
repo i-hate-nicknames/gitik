@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/i-hate-nicknames/gitik/packages/data"
@@ -18,9 +19,10 @@ var hashObjCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		err := data.HashObject(args[0])
+		oid, err := data.HashObject(args[0], data.TypeBlob)
 		if err != nil {
 			log.Fatal(err)
 		}
+		fmt.Println(oid)
 	},
 }

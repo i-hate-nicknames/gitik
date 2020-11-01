@@ -3,6 +3,7 @@ package data
 import (
 	"bytes"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,21 @@ import (
 )
 
 const gitDir = ".gitik"
+
+type ObjectType string
+
+const (
+	TypeBlob ObjectType = "blob"
+)
+
+func (t ObjectType) String() string {
+	switch t {
+	case TypeBlob:
+		return "blob"
+	default:
+		return "_unknown"
+	}
+}
 
 // Init initializes a new repository
 func Init() string {
@@ -25,36 +41,49 @@ func Init() string {
 	return filepath.Join(dir, gitDir)
 }
 
-// HashObject calculates sha1 sum of given data, and puts it
-// in the git directory using the hash as the name
-// Basically, it's a store mechanism for a content-based database
-func HashObject(fileName string) error {
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return err
-	}
-	return hashAndStore(data)
-}
+var UnexpectedTypeErr = errors.New("unexpected object type")
+var InvalidObjectErr = errors.New("invalid object format")
 
 // GetObject retrieves an object stored by HashObject under its object ID (oid)
 // This is the retrieve process of the data stored by HashObject
-func GetObject(oid string) ([]byte, error) {
+func GetObject(oid string, expectedType ObjectType) ([]byte, error) {
 	data, err := ioutil.ReadFile(filepath.Join(gitDir, oid))
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	split := bytes.SplitN(data, []byte{0}, 2)
+	if len(split) != 2 {
+		return nil, InvalidObjectErr
+	}
+	if string(split[0]) != expectedType.String() {
+		return nil, UnexpectedTypeErr
+	}
+	return split[1], nil
 }
 
-func hashAndStore(data []byte) error {
+// HashObject calculates sha1 sum of given data, and puts it
+// in the git directory using the hash as the name
+// Basically, it's a store mechanism for a content-based database
+func HashObject(fileName string, objType ObjectType) (string, error) {
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", err
+	}
+	header := []byte(objType.String())
+	header = append(header, byte(0))
+	data = append(header, data...)
+	return hashAndStore(data)
+}
+
+func hashAndStore(data []byte) (string, error) {
 	hash := sha1.Sum(data)
 	buf := bytes.NewBuffer(hash[:])
 	oid := fmt.Sprintf("%x", buf)
 	file, err := os.Create(filepath.Join(gitDir, oid))
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
 	_, err = file.Write(data)
-	return err
+	return oid, err
 }
