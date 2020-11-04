@@ -17,12 +17,15 @@ type ObjectType string
 
 const (
 	TypeBlob ObjectType = "blob"
+	TypeTree ObjectType = "tree"
 )
 
 func (t ObjectType) String() string {
 	switch t {
 	case TypeBlob:
 		return "blob"
+	case TypeTree:
+		return "tree"
 	default:
 		return "_unknown"
 	}
@@ -69,13 +72,13 @@ func HashObject(fileName string, objType ObjectType) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return HashAndStore(data, objType)
+}
+
+func HashAndStore(data []byte, objType ObjectType) (string, error) {
 	header := []byte(objType.String())
 	header = append(header, byte(0))
 	data = append(header, data...)
-	return hashAndStore(data)
-}
-
-func hashAndStore(data []byte) (string, error) {
 	hash := sha1.Sum(data)
 	buf := bytes.NewBuffer(hash[:])
 	oid := fmt.Sprintf("%x", buf)
