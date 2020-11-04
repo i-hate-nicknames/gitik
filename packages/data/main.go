@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 )
 
-const gitDir = ".gitik"
+const GitDir = ".gitik"
 
 type ObjectType string
 
@@ -34,11 +34,11 @@ func Init() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Mkdir(gitDir, 0755)
+	err = os.Mkdir(GitDir, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return filepath.Join(dir, gitDir)
+	return filepath.Join(dir, GitDir)
 }
 
 var UnexpectedTypeErr = errors.New("unexpected object type")
@@ -47,7 +47,7 @@ var InvalidObjectErr = errors.New("invalid object format")
 // GetObject retrieves an object stored by HashObject under its object ID (oid)
 // This is the retrieve process of the data stored by HashObject
 func GetObject(oid string, expectedType ObjectType) ([]byte, error) {
-	data, err := ioutil.ReadFile(filepath.Join(gitDir, oid))
+	data, err := ioutil.ReadFile(filepath.Join(GitDir, oid))
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func hashAndStore(data []byte) (string, error) {
 	hash := sha1.Sum(data)
 	buf := bytes.NewBuffer(hash[:])
 	oid := fmt.Sprintf("%x", buf)
-	file, err := os.Create(filepath.Join(gitDir, oid))
+	file, err := os.Create(filepath.Join(GitDir, oid))
 	if err != nil {
 		return "", err
 	}
