@@ -29,15 +29,16 @@ func (t ObjectType) String() string {
 }
 
 type treeEntry struct {
-	name, oid string
-	otype     ObjectType
+	name  string
+	oid   storage.OID
+	otype ObjectType
 }
 
 func (te treeEntry) String() string {
 	return fmt.Sprintf("%s %s %s", te.otype.String(), te.oid, te.name)
 }
 
-func WriteFile(fileName string) (string, error) {
+func WriteFile(fileName string) (storage.OID, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return "", err
@@ -45,7 +46,7 @@ func WriteFile(fileName string) (string, error) {
 	return storage.HashObject(data, []byte(TypeBlob))
 }
 
-func ReadFile(objectID string) (string, error) {
+func ReadFile(objectID storage.OID) (string, error) {
 	data, err := storage.GetObject(objectID, []byte(TypeBlob))
 	if err != nil {
 		return "", err
@@ -54,7 +55,7 @@ func ReadFile(objectID string) (string, error) {
 	return fmt.Sprintf(buf.String()), nil
 }
 
-func WriteTree(directory string) (string, error) {
+func WriteTree(directory string) (storage.OID, error) {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		return "", nil

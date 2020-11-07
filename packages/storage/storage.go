@@ -13,6 +13,8 @@ import (
 
 const GitDir = ".gitik"
 
+type OID string
+
 // Init initializes a new repository
 func Init() string {
 	dir, err := os.Getwd()
@@ -32,8 +34,8 @@ var InvalidObjectErr = errors.New("invalid object format")
 
 // GetObject retrieves an object stored by HashObject under its object ID (oid)
 // This is the retrieve process of the data stored by HashObject
-func GetObject(oid string, expectedHeader []byte) ([]byte, error) {
-	data, err := ioutil.ReadFile(filepath.Join(GitDir, oid))
+func GetObject(oid OID, expectedHeader []byte) ([]byte, error) {
+	data, err := ioutil.ReadFile(filepath.Join(GitDir, string(oid)))
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +52,7 @@ func GetObject(oid string, expectedHeader []byte) ([]byte, error) {
 // HashObject calculates sha1 sum of given data, and puts it
 // in the git directory using the hash as the name
 // Basically, it's a store mechanism for a content-based database
-func HashObject(data []byte, header []byte) (string, error) {
+func HashObject(data []byte, header []byte) (OID, error) {
 	header = append(header, byte(0))
 	data = append(header, data...)
 	hash := sha1.Sum(data)
@@ -62,5 +64,5 @@ func HashObject(data []byte, header []byte) (string, error) {
 	}
 	defer file.Close()
 	_, err = file.Write(data)
-	return oid, err
+	return OID(oid), err
 }
