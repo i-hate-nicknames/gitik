@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/i-hate-nicknames/gitik/packages/data"
+	"github.com/i-hate-nicknames/gitik/packages/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var hashObjCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		oid, err := data.HashObject(args[0], data.TypeBlob)
+		oid, err := plumbing.WriteFile(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}

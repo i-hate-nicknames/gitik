@@ -1,11 +1,10 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 
-	"github.com/i-hate-nicknames/gitik/packages/data"
+	"github.com/i-hate-nicknames/gitik/packages/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -20,11 +19,10 @@ var catFileCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		data, err := data.GetObject(args[0], data.TypeBlob)
+		data, err := plumbing.ReadFile(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
-		buf := bytes.NewBuffer(data)
-		fmt.Printf(buf.String())
+		fmt.Printf(data)
 	},
 }

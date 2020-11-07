@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/i-hate-nicknames/gitik/packages/base"
+	"github.com/i-hate-nicknames/gitik/packages/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +20,7 @@ var writeTreeCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 
-		oid, err := base.WriteTree(args[0])
+		oid, err := plumbing.WriteTree(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
