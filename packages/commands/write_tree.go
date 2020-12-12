@@ -15,7 +15,7 @@ func init() {
 var writeTreeCmd = &cobra.Command{
 	Use:   "write-tree",
 	Short: "write given tree to the object database",
-	Long:  "find an object by its object id in the index and print its contents to stdout",
+	Long:  "Given directory path, generate a tree object out of it and write it to the object database",
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
