@@ -90,6 +90,10 @@ func WriteTree(directory string) (storage.OID, error) {
 	return storage.HashObject([]byte(strings.Join(lines, "\n")), []byte(TypeTree))
 }
 
+func ReadTree(oid storage.OID) error {
+	return nil
+}
+
 func isIgnored(path string) bool {
 	return path == storage.GitDir
 }
