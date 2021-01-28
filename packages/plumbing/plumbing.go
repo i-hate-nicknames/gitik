@@ -2,6 +2,7 @@ package plumbing
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -105,7 +106,6 @@ func WriteTree(directory string) (storage.OID, error) {
 	for _, entry := range entries {
 		lines = append(lines, entry.String())
 	}
-
 	return storage.HashObject([]byte(strings.Join(lines, "\n")), []byte(TypeTree))
 }
 
@@ -120,12 +120,17 @@ func ReadTree(oid storage.OID) error {
 	return nil
 }
 
+var errEmptyTree = errors.New("empty tree")
+
 func readTreeEntries(oid storage.OID) ([]treeEntry, error) {
 	data, err := storage.GetObject(oid, []byte(TypeTree))
 	if err != nil {
 		return nil, err
 	}
 	var entries []treeEntry
+	if len(data) == 0 {
+		return nil, errEmptyTree
+	}
 	entriesRaw := bytes.Split(data, []byte("\n"))
 	for _, eraw := range entriesRaw {
 		entry, err := parseEntry(eraw)
@@ -137,6 +142,9 @@ func readTreeEntries(oid storage.OID) ([]treeEntry, error) {
 			entries = append(entries, entry)
 		case TypeTree:
 			children, err := readTreeEntries(entry.oid)
+			if err == errEmptyTree {
+				continue
+			}
 			if err != nil {
 				return nil, err
 			}
