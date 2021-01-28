@@ -89,6 +89,8 @@ func WriteTree(directory string) (storage.OID, error) {
 		fullPath := filepath.Join(directory, f.Name())
 		if f.IsDir() {
 			oid, err := WriteTree(fullPath)
+			// todo: if tree wasn't written because it's empty, do not add it
+			// to the entries
 			if err != nil {
 				return "", err
 			}
@@ -106,6 +108,8 @@ func WriteTree(directory string) (storage.OID, error) {
 	for _, entry := range entries {
 		lines = append(lines, entry.String())
 	}
+	// todo: add empty tree error, and return it here when lines is empty,
+	// instead of writing an empty tree
 	return storage.HashObject([]byte(strings.Join(lines, "\n")), []byte(TypeTree))
 }
 
