@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -114,19 +116,48 @@ func WriteTree(directory string) (storage.OID, error) {
 }
 
 func ReadTree(oid storage.OID) error {
-	entries, err := readTreeEntries(oid)
+	entries, err := readTreeEntries(oid, ".")
 	if err != nil {
 		return err
 	}
+	dirPerm := os.ModeDir | 0755
 	for _, entry := range entries {
-		fmt.Println(entry)
+		// todo: consider storing permissions along with the name
+		dirPath, _ := path.Split(entry.name)
+		err := os.MkdirAll(dirPath, dirPerm)
+		if err != nil {
+			return err
+		}
+		data, err := storage.GetObject(entry.oid, []byte(TypeBlob))
+		if err != nil {
+			return err
+		}
+		err = dumpFile(entry.name, data)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
+func dumpFile(path string, data []byte) (err error) {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cerr := file.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	_, err = file.Write(data)
+	return
+}
+
 var errEmptyTree = errors.New("empty tree")
 
-func readTreeEntries(oid storage.OID) ([]treeEntry, error) {
+func readTreeEntries(oid storage.OID, path string) ([]treeEntry, error) {
 	data, err := storage.GetObject(oid, []byte(TypeTree))
 	if err != nil {
 		return nil, err
@@ -141,11 +172,15 @@ func readTreeEntries(oid storage.OID) ([]treeEntry, error) {
 		if err != nil {
 			return nil, err
 		}
+		if entry.name == ".." || entry.name == "." {
+			return nil, fmt.Errorf("readTreeEntries: malformed entry, path %s, name %s", path, entry.name)
+		}
 		switch entry.otype {
 		case TypeBlob:
+			entry.name = path + "/" + entry.name
 			entries = append(entries, entry)
 		case TypeTree:
-			children, err := readTreeEntries(entry.oid)
+			children, err := readTreeEntries(entry.oid, path+"/"+entry.name)
 			if err == errEmptyTree {
 				continue
 			}
