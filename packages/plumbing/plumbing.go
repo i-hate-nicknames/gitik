@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/i-hate-nicknames/gitik/packages/storage"
 )
@@ -120,6 +121,10 @@ func ReadTree(oid storage.OID) error {
 	if err != nil {
 		return err
 	}
+	err = emptyDir(".")
+	if err != nil {
+		return err
+	}
 	dirPerm := os.ModeDir | 0755
 	for _, entry := range entries {
 		// todo: consider storing permissions along with the name
@@ -190,4 +195,37 @@ func isIgnored(path string) bool {
 		}
 	}
 	return path == storage.GitDir
+}
+
+func emptyDir(directory string) error {
+	files, err := ioutil.ReadDir(directory)
+	if err != nil {
+		return err
+	}
+	for _, f := range files {
+		fullPath := filepath.Join(directory, f.Name())
+		if isIgnored(f.Name()) {
+			continue
+		}
+		if f.IsDir() {
+			err := emptyDir(fullPath)
+			if err != nil {
+				return err
+			}
+			err = os.Remove(fullPath)
+			if errors.Is(err, syscall.ENOTEMPTY) {
+				continue
+			} else if err != nil {
+				return err
+			}
+		}
+		if f.Mode().IsRegular() {
+			err = os.Remove(fullPath)
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+	return nil
 }
