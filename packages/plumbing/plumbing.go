@@ -132,27 +132,12 @@ func ReadTree(oid storage.OID) error {
 		if err != nil {
 			return err
 		}
-		err = dumpFile(entry.name, data)
+		err = storage.WriteFile(entry.name, data)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func dumpFile(path string, data []byte) (err error) {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		cerr := file.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	_, err = file.Write(data)
-	return
 }
 
 var errEmptyTree = errors.New("empty tree")

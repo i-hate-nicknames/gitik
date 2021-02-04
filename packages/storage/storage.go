@@ -58,11 +58,24 @@ func HashObject(data []byte, header []byte) (OID, error) {
 	hash := sha1.Sum(data)
 	buf := bytes.NewBuffer(hash[:])
 	oid := fmt.Sprintf("%x", buf)
-	file, err := os.Create(filepath.Join(GitDir, oid))
+	err := WriteFile(filepath.Join(GitDir, oid), data)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	return OID(oid), nil
+}
+
+func WriteFile(path string, data []byte) (err error) {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cerr := file.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
 	_, err = file.Write(data)
-	return OID(oid), err
+	return
 }
