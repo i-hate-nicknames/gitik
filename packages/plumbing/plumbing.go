@@ -195,6 +195,14 @@ func readTreeEntries(oid storage.OID, path string) ([]treeEntry, error) {
 	return entries, nil
 }
 
+// for testing purposes in the same directory, remove when done
+var blacklist = []string{"gitik", ".git"}
+
 func isIgnored(path string) bool {
+	for _, item := range blacklist {
+		if strings.Contains(path, item) {
+			return true
+		}
+	}
 	return path == storage.GitDir
 }
