@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/i-hate-nicknames/gitik/packages/plumbing"
 	"github.com/i-hate-nicknames/gitik/packages/storage"
 	"github.com/spf13/cobra"
 )
@@ -20,10 +19,10 @@ var catFileCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		data, err := plumbing.ReadFile(storage.OID(args[0]))
+		obj, err := storage.GetObject(storage.OID(args[0]))
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf(data)
+		fmt.Printf(string(obj.Data))
 	},
 }

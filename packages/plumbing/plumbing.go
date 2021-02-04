@@ -11,34 +11,14 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/i-hate-nicknames/gitik/packages/constants"
 	"github.com/i-hate-nicknames/gitik/packages/storage"
 )
-
-type ObjectType string
-
-const (
-	TypeBlob   ObjectType = "blob"
-	TypeTree   ObjectType = "tree"
-	TypeCommit ObjectType = "commit"
-)
-
-func (t ObjectType) String() string {
-	switch t {
-	case TypeBlob:
-		return "blob"
-	case TypeTree:
-		return "tree"
-	case TypeCommit:
-		return "commit"
-	default:
-		return "_unknown"
-	}
-}
 
 type treeEntry struct {
 	name  string
 	oid   storage.OID
-	otype ObjectType
+	otype constants.ObjectType
 }
 
 func (te treeEntry) String() string {
@@ -50,14 +30,9 @@ func parseEntry(data []byte) (treeEntry, error) {
 	if len(parts) != 3 {
 		return treeEntry{}, fmt.Errorf("parseEntry: wrong length (%d), should be 3", len(parts))
 	}
-	var otype ObjectType
-	switch header := string(parts[0]); header {
-	case "blob":
-		otype = TypeBlob
-	case "tree":
-		otype = TypeTree
-	default:
-		return treeEntry{}, fmt.Errorf("parseEntry: wrong entry type %s", header)
+	otype, err := constants.DecodeType(parts[0])
+	if err != nil {
+		return treeEntry{}, err
 	}
 	oid := storage.OID(parts[1])
 	name := string(parts[2])
@@ -69,16 +44,7 @@ func WriteFile(fileName string) (storage.OID, error) {
 	if err != nil {
 		return "", err
 	}
-	return storage.HashObject(data, []byte(TypeBlob))
-}
-
-func ReadFile(objectID storage.OID) (string, error) {
-	data, err := storage.GetObject(objectID, []byte(TypeBlob))
-	if err != nil {
-		return "", err
-	}
-	buf := bytes.NewBuffer(data)
-	return fmt.Sprintf(buf.String()), nil
+	return storage.HashObject(data, constants.TypeBlob)
 }
 
 func WriteTree(directory string) (storage.OID, error) {
@@ -100,13 +66,13 @@ func WriteTree(directory string) (storage.OID, error) {
 			if err != nil {
 				return "", err
 			}
-			entry = treeEntry{name: f.Name(), oid: oid, otype: TypeTree}
+			entry = treeEntry{name: f.Name(), oid: oid, otype: constants.TypeTree}
 		} else if f.Mode().IsRegular() {
 			oid, err := WriteFile(fullPath)
 			if err != nil {
 				return "", err
 			}
-			entry = treeEntry{name: f.Name(), oid: oid, otype: TypeBlob}
+			entry = treeEntry{name: f.Name(), oid: oid, otype: constants.TypeBlob}
 		}
 		entries = append(entries, entry)
 	}
@@ -116,7 +82,7 @@ func WriteTree(directory string) (storage.OID, error) {
 	}
 	// todo: add empty tree error, and return it here when lines is empty,
 	// instead of writing an empty tree
-	return storage.HashObject([]byte(strings.Join(lines, "\n")), []byte(TypeTree))
+	return storage.HashObject([]byte(strings.Join(lines, "\n")), constants.TypeTree)
 }
 
 func ReadTree(oid storage.OID) error {
@@ -136,7 +102,7 @@ func ReadTree(oid storage.OID) error {
 		if err != nil {
 			return err
 		}
-		data, err := storage.GetObject(entry.oid, []byte(TypeBlob))
+		data, err := readObject(oid, constants.TypeBlob)
 		if err != nil {
 			return err
 		}
@@ -151,7 +117,7 @@ func ReadTree(oid storage.OID) error {
 var errEmptyTree = errors.New("empty tree")
 
 func readTreeEntries(oid storage.OID, path string) ([]treeEntry, error) {
-	data, err := storage.GetObject(oid, []byte(TypeTree))
+	data, err := readObject(oid, constants.TypeTree)
 	if err != nil {
 		return nil, err
 	}
@@ -169,10 +135,10 @@ func readTreeEntries(oid storage.OID, path string) ([]treeEntry, error) {
 			return nil, fmt.Errorf("readTreeEntries: malformed entry, path %s, name %s", path, entry.name)
 		}
 		switch entry.otype {
-		case TypeBlob:
+		case constants.TypeBlob:
 			entry.name = path + "/" + entry.name
 			entries = append(entries, entry)
-		case TypeTree:
+		case constants.TypeTree:
 			children, err := readTreeEntries(entry.oid, path+"/"+entry.name)
 			if err == errEmptyTree {
 				continue
@@ -197,7 +163,7 @@ func isIgnored(path string) bool {
 			return true
 		}
 	}
-	return path == storage.GitDir
+	return path == constants.GitDir
 }
 
 func emptyDir(directory string) error {
@@ -231,4 +197,15 @@ func emptyDir(directory string) error {
 
 	}
 	return nil
+}
+
+func readObject(oid storage.OID, expectedType constants.ObjectType) ([]byte, error) {
+	obj, err := storage.GetObject(oid)
+	if err != nil {
+		return nil, err
+	}
+	if obj.ObjType != expectedType {
+		return nil, fmt.Errorf("unexpected type: want %s, got %s", expectedType, obj.ObjType)
+	}
+	return obj.Data, nil
 }

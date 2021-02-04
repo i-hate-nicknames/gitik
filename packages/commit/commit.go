@@ -3,6 +3,7 @@ package commit
 import (
 	"fmt"
 
+	"github.com/i-hate-nicknames/gitik/packages/constants"
 	"github.com/i-hate-nicknames/gitik/packages/plumbing"
 	"github.com/i-hate-nicknames/gitik/packages/storage"
 )
@@ -23,7 +24,7 @@ func MakeCommit(message string) (storage.OID, error) {
 	}
 	c := Commit{Tree: oid, Message: message}
 
-	commitOID, err := storage.HashObject(c.Encode(), []byte(plumbing.TypeCommit))
+	commitOID, err := storage.HashObject(c.Encode(), constants.TypeCommit)
 	if err != nil {
 		return "", err
 	}
