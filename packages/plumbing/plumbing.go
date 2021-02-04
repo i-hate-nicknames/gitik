@@ -17,8 +17,9 @@ import (
 type ObjectType string
 
 const (
-	TypeBlob ObjectType = "blob"
-	TypeTree ObjectType = "tree"
+	TypeBlob   ObjectType = "blob"
+	TypeTree   ObjectType = "tree"
+	TypeCommit ObjectType = "commit"
 )
 
 func (t ObjectType) String() string {
@@ -27,6 +28,8 @@ func (t ObjectType) String() string {
 		return "blob"
 	case TypeTree:
 		return "tree"
+	case TypeCommit:
+		return "commit"
 	default:
 		return "_unknown"
 	}
