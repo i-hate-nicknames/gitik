@@ -20,6 +20,47 @@ type Commit struct {
 	Message string
 }
 
+func CommitCurrentTree(message string) (storage.OID, error) {
+	oid, err := plumbing.WriteTree(".")
+	if err != nil {
+		return "", err
+	}
+	c := Commit{Tree: oid, Message: message}
+	headOID, err := getHead()
+	if err != nil && !errors.Is(err, ErrNoHead) {
+		return "", err
+	}
+	if err == nil {
+		c.Parent = headOID
+	}
+	commitOID, err := storage.StoreObject(c.Encode(), constants.TypeCommit)
+	if err != nil {
+		return "", err
+	}
+	err = setHead(commitOID)
+	if err != nil {
+		return "", fmt.Errorf("make commit: cannot write commit to head: %w", err)
+	}
+	return commitOID, nil
+}
+
+func Log() ([]Commit, error) {
+	var log []Commit
+	head, err := getHead()
+	if err != nil {
+		return nil, err
+	}
+	for currentOID := head; currentOID != ""; {
+		commit, err := getCommit(currentOID)
+		if err != nil {
+			return nil, err
+		}
+		log = append(log, commit)
+		currentOID = commit.Parent
+	}
+	return log, nil
+}
+
 func (c Commit) Encode() []byte {
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("tree %s\n", string(c.Tree)))
@@ -55,47 +96,6 @@ func Decode(data []byte) (Commit, error) {
 		}
 	}
 	return result, nil
-}
-
-func MakeCommit(message string) (storage.OID, error) {
-	oid, err := plumbing.WriteTree(".")
-	if err != nil {
-		return "", err
-	}
-	c := Commit{Tree: oid, Message: message}
-	headOID, err := getHead()
-	if err != nil && !errors.Is(err, ErrNoHead) {
-		return "", err
-	}
-	if err == nil {
-		c.Parent = headOID
-	}
-	commitOID, err := storage.HashObject(c.Encode(), constants.TypeCommit)
-	if err != nil {
-		return "", err
-	}
-	err = setHead(commitOID)
-	if err != nil {
-		return "", fmt.Errorf("make commit: cannot write commit to head: %w", err)
-	}
-	return commitOID, nil
-}
-
-func Log() ([]Commit, error) {
-	var log []Commit
-	head, err := getHead()
-	if err != nil {
-		return nil, err
-	}
-	for currentOID := head; currentOID != ""; {
-		commit, err := getCommit(currentOID)
-		if err != nil {
-			return nil, err
-		}
-		log = append(log, commit)
-		currentOID = commit.Parent
-	}
-	return log, nil
 }
 
 func getCommit(oid storage.OID) (Commit, error) {

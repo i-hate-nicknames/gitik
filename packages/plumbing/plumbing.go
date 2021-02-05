@@ -44,7 +44,7 @@ func WriteFile(fileName string) (storage.OID, error) {
 	if err != nil {
 		return "", err
 	}
-	return storage.HashObject(data, constants.TypeBlob)
+	return storage.StoreObject(data, constants.TypeBlob)
 }
 
 func WriteTree(directory string) (storage.OID, error) {
@@ -82,7 +82,7 @@ func WriteTree(directory string) (storage.OID, error) {
 	}
 	// todo: add empty tree error, and return it here when lines is empty,
 	// instead of writing an empty tree
-	return storage.HashObject([]byte(strings.Join(lines, "\n")), constants.TypeTree)
+	return storage.StoreObject([]byte(strings.Join(lines, "\n")), constants.TypeTree)
 }
 
 func ReadTree(oid storage.OID) error {

@@ -58,10 +58,10 @@ func GetObject(oid OID) (StoredObject, error) {
 	return obj, nil
 }
 
-// HashObject calculates sha1 sum of given data, and puts it
+// StoreObject calculates sha1 sum of given data, and puts it
 // in the git directory using the hash as the name
 // Basically, it's a store mechanism for a content-based database
-func HashObject(data []byte, objType constants.ObjectType) (OID, error) {
+func StoreObject(data []byte, objType constants.ObjectType) (OID, error) {
 	header := objType.Encode()
 	header = append(header, byte(0))
 	data = append(header, data...)
