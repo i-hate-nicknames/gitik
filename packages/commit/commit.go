@@ -1,7 +1,9 @@
 package commit
 
 import (
+	"errors"
 	"fmt"
+	"path"
 
 	"github.com/i-hate-nicknames/gitik/packages/constants"
 	"github.com/i-hate-nicknames/gitik/packages/plumbing"
@@ -28,5 +30,16 @@ func MakeCommit(message string) (storage.OID, error) {
 	if err != nil {
 		return "", err
 	}
+	err = setHead(commitOID)
+	if err != nil {
+		return "", fmt.Errorf("make commit: cannot write commit to head: %w", err)
+	}
 	return commitOID, nil
 }
+
+func setHead(oid storage.OID) error {
+	path := path.Join(constants.GitDir, constants.HeadName)
+	return storage.WriteFile(path, []byte(oid))
+}
+
+var errNoHead = errors.New("head not found or empty")
