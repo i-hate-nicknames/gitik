@@ -12,6 +12,7 @@ var rootCmd = &cobra.Command{
 	Long:  "gitik is a small tiny reimplementation of git, serving educational purposes",
 }
 
+// Execute root command
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
