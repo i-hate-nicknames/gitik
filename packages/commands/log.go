@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/i-hate-nicknames/gitik/packages/commit"
+	"github.com/i-hate-nicknames/gitik/packages/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,14 @@ var logCmd = &cobra.Command{
 	Long:  "get commit history ordered from newest to oldest",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		commitLog, err := commit.Log()
+		var commitLog []commit.Commit
+		var err error
+		if len(args) > 0 {
+			commitLog, err = commit.LogFrom(storage.OID(args[0]))
+		} else {
+			commitLog, err = commit.Log()
+		}
+
 		if errors.Is(err, commit.ErrNoHead) {
 			fmt.Println("No commits found")
 			return

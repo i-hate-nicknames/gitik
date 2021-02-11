@@ -45,12 +45,16 @@ func CommitCurrentTree(message string) (storage.OID, error) {
 }
 
 func Log() ([]Commit, error) {
-	var log []Commit
 	head, err := getHead()
 	if err != nil {
 		return nil, err
 	}
-	for currentOID := head; currentOID != ""; {
+	return LogFrom(head)
+}
+
+func LogFrom(startFrom storage.OID) ([]Commit, error) {
+	var log []Commit
+	for currentOID := storage.OID(startFrom); currentOID != ""; {
 		commit, err := getCommit(currentOID)
 		if err != nil {
 			return nil, err
