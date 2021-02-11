@@ -30,7 +30,7 @@ func parseEntry(data []byte) (treeEntry, error) {
 	if len(parts) != 3 {
 		return treeEntry{}, fmt.Errorf("parseEntry: wrong length (%d), should be 3", len(parts))
 	}
-	otype, err := constants.DecodeType(parts[0])
+	otype, err := constants.Decode(parts[0])
 	if err != nil {
 		return treeEntry{}, err
 	}
@@ -39,6 +39,8 @@ func parseEntry(data []byte) (treeEntry, error) {
 	return treeEntry{name, oid, otype}, nil
 }
 
+// WriteFile writes contents of the given file path (relative to the root of the repository)
+// to the object database. Return object id of the stored object
 func WriteFile(fileName string) (storage.OID, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -47,6 +49,9 @@ func WriteFile(fileName string) (storage.OID, error) {
 	return storage.StoreObject(data, constants.TypeBlob)
 }
 
+// WriteTree writes contents of the given directory (relative to the root of the repository)
+// to the object database. Return object id of the stored directory.
+// Recursively writes all files found in the directory
 func WriteTree(directory string) (storage.OID, error) {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
@@ -85,6 +90,9 @@ func WriteTree(directory string) (storage.OID, error) {
 	return storage.StoreObject([]byte(strings.Join(lines, "\n")), constants.TypeTree)
 }
 
+// ReadTree reads directory under given storage id and writes it in the root
+// directory of repository. The contents of root directory is removed before
+// the write happens, but the ignored files are omitted
 func ReadTree(oid storage.OID) error {
 	entries, err := readTreeEntries(oid, ".")
 	if err != nil {

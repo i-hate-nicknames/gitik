@@ -21,7 +21,7 @@ var makeCommitCmd = &cobra.Command{
 	Long:  "write current tree with given message and store it separately",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		data, err := commit.CommitCurrentTree(messageP)
+		data, err := commit.SaveCurrentTree(messageP)
 		if err != nil {
 			log.Fatal(err)
 		}

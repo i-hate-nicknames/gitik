@@ -13,8 +13,10 @@ import (
 	"github.com/i-hate-nicknames/gitik/packages/constants"
 )
 
+// OID is object id, a sha1 checksum of object contents, used to identify object for later retrieval
 type OID string
 
+// StoredObject represents an object that is retrieved from the storage
 type StoredObject struct {
 	ObjType constants.ObjectType
 	Data    []byte
@@ -33,9 +35,8 @@ func Init() string {
 	return filepath.Join(dir, constants.GitDir)
 }
 
-var UnexpectedTypeErr = errors.New("unexpected object type")
-
-var InvalidObjectErr = errors.New("invalid object format")
+// ErrInvalidObject is returned when object format is invalid
+var ErrInvalidObject = errors.New("invalid object format")
 
 // GetObject retrieves an object stored by HashObject under its object ID (oid)
 // This is the retrieve process of the data stored by HashObject
@@ -47,9 +48,9 @@ func GetObject(oid OID) (StoredObject, error) {
 	}
 	split := bytes.SplitN(data, []byte{0}, 2)
 	if len(split) != 2 {
-		return obj, InvalidObjectErr
+		return obj, ErrInvalidObject
 	}
-	objType, err := constants.DecodeType(split[0])
+	objType, err := constants.Decode(split[0])
 	if err != nil {
 		return obj, err
 	}
@@ -75,6 +76,8 @@ func StoreObject(data []byte, objType constants.ObjectType) (OID, error) {
 	return OID(oid), nil
 }
 
+// WriteFile writes data to a regular file under given path
+// return error on any i/o error, or if a file with this name already exists
 func WriteFile(path string, data []byte) (err error) {
 	file, err := os.Create(path)
 	if err != nil {
