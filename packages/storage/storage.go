@@ -18,7 +18,7 @@ type OID string
 
 // StoredObject represents an object that is retrieved from the storage
 type StoredObject struct {
-	ObjType constants.ObjectType
+	ObjType ObjectType
 	Data    []byte
 }
 
@@ -50,7 +50,7 @@ func GetObject(oid OID) (StoredObject, error) {
 	if len(split) != 2 {
 		return obj, ErrInvalidObject
 	}
-	objType, err := constants.Decode(split[0])
+	objType, err := Decode(split[0])
 	if err != nil {
 		return obj, err
 	}
@@ -62,7 +62,7 @@ func GetObject(oid OID) (StoredObject, error) {
 // StoreObject calculates sha1 sum of given data, and puts it
 // in the git directory using the hash as the name
 // Basically, it's a store mechanism for a content-based database
-func StoreObject(data []byte, objType constants.ObjectType) (OID, error) {
+func StoreObject(data []byte, objType ObjectType) (OID, error) {
 	header := objType.Encode()
 	header = append(header, byte(0))
 	data = append(header, data...)

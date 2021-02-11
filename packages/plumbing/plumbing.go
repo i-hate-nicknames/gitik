@@ -18,7 +18,7 @@ import (
 type treeEntry struct {
 	name  string
 	oid   storage.OID
-	otype constants.ObjectType
+	otype storage.ObjectType
 }
 
 func (te treeEntry) String() string {
@@ -30,7 +30,7 @@ func parseEntry(data []byte) (treeEntry, error) {
 	if len(parts) != 3 {
 		return treeEntry{}, fmt.Errorf("parseEntry: wrong length (%d), should be 3", len(parts))
 	}
-	otype, err := constants.Decode(parts[0])
+	otype, err := storage.Decode(parts[0])
 	if err != nil {
 		return treeEntry{}, err
 	}
@@ -46,7 +46,7 @@ func WriteFile(fileName string) (storage.OID, error) {
 	if err != nil {
 		return "", err
 	}
-	return storage.StoreObject(data, constants.TypeBlob)
+	return storage.StoreObject(data, storage.TypeBlob)
 }
 
 // WriteTree writes contents of the given directory (relative to the root of the repository)
@@ -71,13 +71,13 @@ func WriteTree(directory string) (storage.OID, error) {
 			if err != nil {
 				return "", err
 			}
-			entry = treeEntry{name: f.Name(), oid: oid, otype: constants.TypeTree}
+			entry = treeEntry{name: f.Name(), oid: oid, otype: storage.TypeTree}
 		} else if f.Mode().IsRegular() {
 			oid, err := WriteFile(fullPath)
 			if err != nil {
 				return "", err
 			}
-			entry = treeEntry{name: f.Name(), oid: oid, otype: constants.TypeBlob}
+			entry = treeEntry{name: f.Name(), oid: oid, otype: storage.TypeBlob}
 		}
 		entries = append(entries, entry)
 	}
@@ -87,7 +87,7 @@ func WriteTree(directory string) (storage.OID, error) {
 	}
 	// todo: add empty tree error, and return it here when lines is empty,
 	// instead of writing an empty tree
-	return storage.StoreObject([]byte(strings.Join(lines, "\n")), constants.TypeTree)
+	return storage.StoreObject([]byte(strings.Join(lines, "\n")), storage.TypeTree)
 }
 
 // ReadTree reads directory under given storage id and writes it in the root
@@ -110,7 +110,7 @@ func ReadTree(oid storage.OID) error {
 		if err != nil {
 			return err
 		}
-		data, err := readObject(oid, constants.TypeBlob)
+		data, err := readObject(oid, storage.TypeBlob)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func ReadTree(oid storage.OID) error {
 var errEmptyTree = errors.New("empty tree")
 
 func readTreeEntries(oid storage.OID, path string) ([]treeEntry, error) {
-	data, err := readObject(oid, constants.TypeTree)
+	data, err := readObject(oid, storage.TypeTree)
 	if err != nil {
 		return nil, err
 	}
@@ -143,10 +143,10 @@ func readTreeEntries(oid storage.OID, path string) ([]treeEntry, error) {
 			return nil, fmt.Errorf("readTreeEntries: malformed entry, path %s, name %s", path, entry.name)
 		}
 		switch entry.otype {
-		case constants.TypeBlob:
+		case storage.TypeBlob:
 			entry.name = path + "/" + entry.name
 			entries = append(entries, entry)
-		case constants.TypeTree:
+		case storage.TypeTree:
 			children, err := readTreeEntries(entry.oid, path+"/"+entry.name)
 			if err == errEmptyTree {
 				continue
@@ -207,7 +207,7 @@ func emptyDir(directory string) error {
 	return nil
 }
 
-func readObject(oid storage.OID, expectedType constants.ObjectType) ([]byte, error) {
+func readObject(oid storage.OID, expectedType storage.ObjectType) ([]byte, error) {
 	obj, err := storage.GetObject(oid)
 	if err != nil {
 		return nil, err

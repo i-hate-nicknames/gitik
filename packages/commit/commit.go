@@ -39,7 +39,7 @@ func SaveCurrentTree(message string) (storage.OID, error) {
 	if err == nil {
 		c.Parent = headOID
 	}
-	commitOID, err := storage.StoreObject(c.Encode(), constants.TypeCommit)
+	commitOID, err := storage.StoreObject(c.Encode(), storage.TypeCommit)
 	if err != nil {
 		return "", err
 	}
