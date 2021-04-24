@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/i-hate-nicknames/gitik/packages/storage"
+	"github.com/i-hate-nicknames/gitik/pkg/storage"
 	"github.com/spf13/cobra"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/i-hate-nicknames/gitik/packages/plumbing"
-	"github.com/i-hate-nicknames/gitik/packages/storage"
+	"github.com/i-hate-nicknames/gitik/pkg/plumbing"
+	"github.com/i-hate-nicknames/gitik/pkg/storage"
 	"github.com/spf13/cobra"
 )
 

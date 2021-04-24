@@ -11,8 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/i-hate-nicknames/gitik/packages/constants"
-	"github.com/i-hate-nicknames/gitik/packages/storage"
+	"github.com/i-hate-nicknames/gitik/pkg/constants"
+	"github.com/i-hate-nicknames/gitik/pkg/storage"
 )
 
 type treeEntry struct {

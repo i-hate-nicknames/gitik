@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/i-hate-nicknames/gitik/packages/constants"
+	"github.com/i-hate-nicknames/gitik/pkg/constants"
 )
 
 // OID is object id, a sha1 checksum of object contents, used to identify object for later retrieval

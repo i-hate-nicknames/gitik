@@ -1,6 +1,6 @@
 package main
 
-import "github.com/i-hate-nicknames/gitik/packages/commands"
+import "github.com/i-hate-nicknames/gitik/pkg/commands"
 
 func main() {
 	commands.Execute()
