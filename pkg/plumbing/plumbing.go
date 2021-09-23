@@ -22,7 +22,7 @@ type treeEntry struct {
 }
 
 func (te treeEntry) String() string {
-	return fmt.Sprintf("%s %s %s", te.otype.String(), te.oid, te.name)
+	return fmt.Sprintf("%s %s %s", te.otype.String(), te.oid.String(), te.name)
 }
 
 func parseEntry(data []byte) (treeEntry, error) {

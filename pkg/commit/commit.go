@@ -135,7 +135,7 @@ func getCommit(oid storage.OID) (Commit, error) {
 
 func setHead(oid storage.OID) error {
 	path := path.Join(constants.GitDir, constants.HeadName)
-	return storage.WriteFile(path, oid[:])
+	return storage.WriteFile(path, []byte(oid.String()))
 }
 
 // ErrNoHead is returned when repository has no HEAD

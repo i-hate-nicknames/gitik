@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -14,17 +15,31 @@ import (
 )
 
 // OID is object id, a sha1 checksum of object contents, used to identify object for later retrieval
-type OID [20]byte
+type OID [sha1.Size]byte
 
+// ZeroOID is OID of no object, used as empty value
 var ZeroOID OID
 
-func MakeOID(bytes []byte) (OID, error) {
+// MakeOID makes Object ID from string encoding
+func MakeOID(hexStr []byte) (OID, error) {
 	var oid OID
-	if len(bytes) != len(oid) {
-		return ZeroOID, fmt.Errorf("MakeOID: invalid object ID: %s, actual length:  %d", bytes, len(bytes))
+	// this is twice as much length as we need,
+	// because hexStr in string encoding takes twice as much space as raw bytes
+	// but let it be this way for readability
+	decoded := make([]byte, len(hexStr))
+	n, err := hex.Decode(decoded, hexStr)
+	if err != nil {
+		return ZeroOID, fmt.Errorf("makeOID: %w", err)
 	}
-	copy(oid[:], bytes)
+	if n != sha1.Size {
+		return ZeroOID, fmt.Errorf("makeOID: invalid length (%d), expected %d, oid: %s", n, sha1.Size, hexStr)
+	}
+	copy(oid[:], decoded)
 	return oid, nil
+}
+
+func (oid OID) String() string {
+	return fmt.Sprintf("%x", oid[:])
 }
 
 // StoredObject represents an object that is retrieved from the storage
@@ -53,7 +68,7 @@ var ErrInvalidObject = errors.New("invalid object format")
 // This is the retrieve process of the data stored by HashObject
 func GetObject(oid OID) (StoredObject, error) {
 	var obj StoredObject
-	data, err := ioutil.ReadFile(filepath.Join(constants.GitDir, string(oid[:])))
+	data, err := ioutil.ReadFile(getObjectPath(oid))
 	if err != nil {
 		return obj, err
 	}
@@ -78,14 +93,12 @@ func StoreObject(data []byte, objType ObjectType) (OID, error) {
 	header = append(header, byte(0))
 	data = append(header, data...)
 	hash := sha1.Sum(data)
-	hashStr := string(hash[:])
-	// buf := bytes.NewBuffer(hash[:])
-	// oid := fmt.Sprintf("%x", buf)
-	err := WriteFile(filepath.Join(constants.GitDir, hashStr), data)
+	oid := OID(hash)
+	err := WriteFile(getObjectPath(oid), data)
 	if err != nil {
 		return ZeroOID, err
 	}
-	return hash, nil
+	return oid, nil
 }
 
 // WriteFile writes data to a regular file under given path
@@ -103,4 +116,11 @@ func WriteFile(path string, data []byte) (err error) {
 	}()
 	_, err = file.Write(data)
 	return
+}
+
+// get file path for given object id
+func getObjectPath(oid OID) string {
+	// in future we might want to use first couple of bytes as a directory
+	// like git does
+	return filepath.Join(constants.GitDir, oid.String())
 }
