@@ -14,7 +14,18 @@ import (
 )
 
 // OID is object id, a sha1 checksum of object contents, used to identify object for later retrieval
-type OID string
+type OID [20]byte
+
+var ZeroOID OID
+
+func MakeOID(bytes []byte) (OID, error) {
+	var oid OID
+	if len(bytes) != len(oid) {
+		return ZeroOID, fmt.Errorf("MakeOID: invalid object ID: %s, actual length:  %d", bytes, len(bytes))
+	}
+	copy(oid[:], bytes)
+	return oid, nil
+}
 
 // StoredObject represents an object that is retrieved from the storage
 type StoredObject struct {
@@ -42,7 +53,7 @@ var ErrInvalidObject = errors.New("invalid object format")
 // This is the retrieve process of the data stored by HashObject
 func GetObject(oid OID) (StoredObject, error) {
 	var obj StoredObject
-	data, err := ioutil.ReadFile(filepath.Join(constants.GitDir, string(oid)))
+	data, err := ioutil.ReadFile(filepath.Join(constants.GitDir, string(oid[:])))
 	if err != nil {
 		return obj, err
 	}
@@ -67,13 +78,14 @@ func StoreObject(data []byte, objType ObjectType) (OID, error) {
 	header = append(header, byte(0))
 	data = append(header, data...)
 	hash := sha1.Sum(data)
-	buf := bytes.NewBuffer(hash[:])
-	oid := fmt.Sprintf("%x", buf)
-	err := WriteFile(filepath.Join(constants.GitDir, oid), data)
+	hashStr := string(hash[:])
+	// buf := bytes.NewBuffer(hash[:])
+	// oid := fmt.Sprintf("%x", buf)
+	err := WriteFile(filepath.Join(constants.GitDir, hashStr), data)
 	if err != nil {
-		return "", err
+		return ZeroOID, err
 	}
-	return OID(oid), nil
+	return hash, nil
 }
 
 // WriteFile writes data to a regular file under given path

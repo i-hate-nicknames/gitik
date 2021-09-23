@@ -24,11 +24,11 @@ var makeCommitCmd = &cobra.Command{
 	Long:  "write current tree with given message and store it separately",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		data, err := commit.SaveCurrentTree(messageP)
+		treeOID, err := commit.SaveCurrentTree(messageP)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(string(data))
+		fmt.Println(string(treeOID[:]))
 	},
 }
 
@@ -41,7 +41,11 @@ var logCmd = &cobra.Command{
 		var commitLog []commit.Commit
 		var err error
 		if len(args) > 0 {
-			commitLog, err = commit.LogFrom(storage.OID(args[0]))
+			commitOID, err := storage.MakeOID([]byte(args[0]))
+			if err != nil {
+				log.Fatal(err)
+			}
+			commitLog, err = commit.LogFrom(commitOID)
 		} else {
 			commitLog, err = commit.Log()
 		}

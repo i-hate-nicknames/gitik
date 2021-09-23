@@ -23,7 +23,11 @@ var catFileCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		obj, err := storage.GetObject(storage.OID(args[0]))
+		oid, err := storage.MakeOID([]byte(args[0]))
+		if err != nil {
+			log.Fatal(err)
+		}
+		obj, err := storage.GetObject(oid)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -38,8 +42,11 @@ var readTreeCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-
-		err := plumbing.ReadTree(storage.OID(args[0]))
+		oid, err := storage.MakeOID([]byte(args[0]))
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = plumbing.ReadTree(oid)
 		if err != nil {
 			log.Fatal(err)
 		}

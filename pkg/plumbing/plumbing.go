@@ -34,7 +34,10 @@ func parseEntry(data []byte) (treeEntry, error) {
 	if err != nil {
 		return treeEntry{}, err
 	}
-	oid := storage.OID(parts[1])
+	oid, err := storage.MakeOID(parts[1])
+	if err != nil {
+		return treeEntry{}, err
+	}
 	name := string(parts[2])
 	return treeEntry{name, oid, otype}, nil
 }
@@ -44,7 +47,7 @@ func parseEntry(data []byte) (treeEntry, error) {
 func WriteFile(fileName string) (storage.OID, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return "", err
+		return storage.ZeroOID, err
 	}
 	return storage.StoreObject(data, storage.TypeBlob)
 }
@@ -55,7 +58,7 @@ func WriteFile(fileName string) (storage.OID, error) {
 func WriteTree(directory string) (storage.OID, error) {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
-		return "", nil
+		return storage.ZeroOID, nil
 	}
 	var entries []treeEntry
 	for _, f := range files {
@@ -69,13 +72,13 @@ func WriteTree(directory string) (storage.OID, error) {
 			// todo: if tree wasn't written because it's empty, do not add it
 			// to the entries
 			if err != nil {
-				return "", err
+				return storage.ZeroOID, err
 			}
 			entry = treeEntry{name: f.Name(), oid: oid, otype: storage.TypeTree}
 		} else if f.Mode().IsRegular() {
 			oid, err := WriteFile(fullPath)
 			if err != nil {
-				return "", err
+				return storage.ZeroOID, err
 			}
 			entry = treeEntry{name: f.Name(), oid: oid, otype: storage.TypeBlob}
 		}

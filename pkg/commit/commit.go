@@ -29,23 +29,23 @@ type Commit struct {
 func SaveCurrentTree(message string) (storage.OID, error) {
 	oid, err := plumbing.WriteTree(".")
 	if err != nil {
-		return "", err
+		return storage.ZeroOID, err
 	}
 	c := Commit{Tree: oid, Message: message}
 	headOID, err := getHead()
 	if err != nil && !errors.Is(err, ErrNoHead) {
-		return "", err
+		return storage.ZeroOID, err
 	}
 	if err == nil {
 		c.Parent = headOID
 	}
 	commitOID, err := storage.StoreObject(c.Encode(), storage.TypeCommit)
 	if err != nil {
-		return "", err
+		return storage.ZeroOID, err
 	}
 	err = setHead(commitOID)
 	if err != nil {
-		return "", fmt.Errorf("make commit: cannot write commit to head: %w", err)
+		return storage.ZeroOID, fmt.Errorf("make commit: cannot write commit to head: %w", err)
 	}
 	return commitOID, nil
 }
@@ -64,7 +64,7 @@ func Log() ([]Commit, error) {
 // and until the first commit, following the parent chain
 func LogFrom(startFrom storage.OID) ([]Commit, error) {
 	var log []Commit
-	for currentOID := storage.OID(startFrom); currentOID != ""; {
+	for currentOID := storage.OID(startFrom); currentOID != storage.ZeroOID; {
 		commit, err := getCommit(currentOID)
 		if err != nil {
 			return nil, err
@@ -79,9 +79,9 @@ func LogFrom(startFrom storage.OID) ([]Commit, error) {
 // Decode method to retrieve commit back
 func (c Commit) Encode() []byte {
 	var buf bytes.Buffer
-	buf.WriteString(fmt.Sprintf("tree %s\n", string(c.Tree)))
-	if c.Parent != "" {
-		buf.WriteString(fmt.Sprintf("parent %s\n", string(c.Parent)))
+	buf.WriteString(fmt.Sprintf("tree %s\n", string(c.Tree[:])))
+	if c.Parent != storage.ZeroOID {
+		buf.WriteString(fmt.Sprintf("parent %s\n", string(c.Parent[:])))
 	}
 	buf.WriteString("\n" + c.Message + "\n")
 	return buf.Bytes()
@@ -104,11 +104,15 @@ func Decode(data []byte) (Commit, error) {
 		if len(parts) != 2 {
 			return Commit{}, ErrInvalidEncoding
 		}
+		oid, err := storage.MakeOID(parts[1])
+		if err != nil {
+			return Commit{}, err
+		}
 		switch string(parts[0]) {
 		case "tree":
-			result.Tree = storage.OID(parts[1])
+			result.Tree = oid
 		case "parent":
-			result.Parent = storage.OID(parts[1])
+			result.Parent = oid
 		default:
 			return Commit{}, ErrInvalidEncoding
 		}
@@ -131,7 +135,7 @@ func getCommit(oid storage.OID) (Commit, error) {
 
 func setHead(oid storage.OID) error {
 	path := path.Join(constants.GitDir, constants.HeadName)
-	return storage.WriteFile(path, []byte(oid))
+	return storage.WriteFile(path, oid[:])
 }
 
 // ErrNoHead is returned when repository has no HEAD
@@ -142,18 +146,17 @@ func getHead() (storage.OID, error) {
 	file, err := os.Open(path)
 	defer file.Close()
 	if errors.Is(err, os.ErrNotExist) {
-		return "", ErrNoHead
+		return storage.ZeroOID, ErrNoHead
 	}
 	if err != nil {
-		return "", err
+		return storage.ZeroOID, err
 	}
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		return "", err
+		return storage.ZeroOID, err
 	}
-	result := storage.OID(data)
-	if result == "" {
-		return "", ErrNoHead
+	if len(data) == 0 {
+		return storage.ZeroOID, ErrNoHead
 	}
-	return result, nil
+	return storage.MakeOID(data)
 }
