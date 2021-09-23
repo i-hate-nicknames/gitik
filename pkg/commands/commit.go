@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/i-hate-nicknames/gitik/pkg/commit"
+	"github.com/i-hate-nicknames/gitik/pkg/plumbing"
 	"github.com/i-hate-nicknames/gitik/pkg/storage"
 	"github.com/spf13/cobra"
 )
@@ -16,6 +17,7 @@ func init() {
 	rootCmd.AddCommand(makeCommitCmd)
 	makeCommitCmd.Flags().StringVarP(&messageP, "message", "m", "", "commit message")
 	rootCmd.AddCommand(logCmd)
+	rootCmd.AddCommand(checkoutCmd)
 }
 
 var makeCommitCmd = &cobra.Command{
@@ -60,6 +62,34 @@ var logCmd = &cobra.Command{
 		for _, commit := range commitLog {
 			fmt.Printf("commit %s\n\n", commit.OID)
 			fmt.Printf("    %s\n", commit.Message)
+		}
+	},
+}
+
+var checkoutCmd = &cobra.Command{
+	Use:   "checkout",
+	Short: "check out given commit, resetting working tree to it",
+	Long:  "set working tree to the tree of the commit and update HEAD",
+
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			log.Fatalf("Expecting commit hash")
+		}
+		commitOID, err := storage.MakeOID([]byte(args[0]))
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		c, err := commit.GetCommit(commitOID)
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		err = plumbing.ReadTree(c.Tree)
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		err = commit.SetHead(c.OID)
+		if err != nil {
+			log.Fatalf(err.Error())
 		}
 	},
 }

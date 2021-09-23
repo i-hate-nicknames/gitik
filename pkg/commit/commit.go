@@ -43,7 +43,7 @@ func SaveCurrentTree(message string) (storage.OID, error) {
 	if err != nil {
 		return storage.ZeroOID, err
 	}
-	err = setHead(commitOID)
+	err = SetHead(commitOID)
 	if err != nil {
 		return storage.ZeroOID, fmt.Errorf("make commit: cannot write commit to head: %w", err)
 	}
@@ -65,7 +65,7 @@ func Log() ([]Commit, error) {
 func LogFrom(startFrom storage.OID) ([]Commit, error) {
 	var log []Commit
 	for currentOID := storage.OID(startFrom); currentOID != storage.ZeroOID; {
-		commit, err := getCommit(currentOID)
+		commit, err := GetCommit(currentOID)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,8 @@ func Decode(data []byte) (Commit, error) {
 	return result, nil
 }
 
-func getCommit(oid storage.OID) (Commit, error) {
+// GetCommit gets commit by its ID
+func GetCommit(oid storage.OID) (Commit, error) {
 	obj, err := storage.GetObject(oid)
 	if err != nil {
 		return Commit{}, err
@@ -133,7 +134,8 @@ func getCommit(oid storage.OID) (Commit, error) {
 	return commit, nil
 }
 
-func setHead(oid storage.OID) error {
+// SetHead sets current HEAD of gitik to give oid
+func SetHead(oid storage.OID) error {
 	path := path.Join(constants.GitDir, constants.HeadName)
 	return storage.WriteFile(path, []byte(oid.String()))
 }
