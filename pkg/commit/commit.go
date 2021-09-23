@@ -188,7 +188,7 @@ func (ce CheckoutError) Error() string {
 	return ""
 }
 
-func (c Commit) Checkout() error {
+func (c Commit) Checkout(recover bool) error {
 	head, err := GetHead()
 	if err != nil {
 		return err
@@ -196,8 +196,11 @@ func (c Commit) Checkout() error {
 	var finalError CheckoutError
 	err = plumbing.ReadTree(c.Tree)
 	if err != nil {
+		if !recover {
+			return err
+		}
 		finalError.origError = err
-		recoverErr := head.Checkout()
+		recoverErr := head.Checkout(false)
 		if recoverErr != nil {
 			finalError.recoverError = recoverErr
 		}

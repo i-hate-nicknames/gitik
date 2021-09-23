@@ -82,7 +82,7 @@ var checkoutCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
-		err = c.Checkout()
+		err = c.Checkout(true)
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
