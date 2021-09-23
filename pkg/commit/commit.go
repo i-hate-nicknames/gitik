@@ -32,7 +32,7 @@ func SaveCurrentTree(message string) (storage.OID, error) {
 		return storage.ZeroOID, err
 	}
 	c := Commit{Tree: oid, Message: message}
-	headOID, err := getHead()
+	headOID, err := getHeadOID()
 	if err != nil && !errors.Is(err, ErrNoHead) {
 		return storage.ZeroOID, err
 	}
@@ -53,7 +53,7 @@ func SaveCurrentTree(message string) (storage.OID, error) {
 // Log returns all commits that were made starting from HEAD
 // and until the first commit, following the parent chain
 func Log() ([]Commit, error) {
-	head, err := getHead()
+	head, err := getHeadOID()
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,16 @@ func SetHead(oid storage.OID) error {
 // ErrNoHead is returned when repository has no HEAD
 var ErrNoHead = errors.New("head not found or empty")
 
-func getHead() (storage.OID, error) {
+// GetHead returns current HEAD (i.e. currently checked out tree)
+func GetHead() (Commit, error) {
+	OID, err := getHeadOID()
+	if err != nil {
+		return Commit{}, err
+	}
+	return GetCommit(OID)
+}
+
+func getHeadOID() (storage.OID, error) {
 	path := path.Join(constants.GitDir, constants.HeadName)
 	file, err := os.Open(path)
 	defer file.Close()
@@ -161,4 +170,38 @@ func getHead() (storage.OID, error) {
 		return storage.ZeroOID, ErrNoHead
 	}
 	return storage.MakeOID(data)
+}
+
+type CheckoutError struct {
+	origError    error
+	recoverError error
+}
+
+func (ce CheckoutError) Error() string {
+	if ce.origError != nil {
+		msg := fmt.Sprintf("failed to read tree: %s", ce.origError)
+		if ce.recoverError != nil {
+			msg = fmt.Sprintf("failed to recover: %s, original error: %s", ce.recoverError, msg)
+		}
+		return msg
+	}
+	return ""
+}
+
+func (c Commit) Checkout() error {
+	head, err := GetHead()
+	if err != nil {
+		return err
+	}
+	var finalError CheckoutError
+	err = plumbing.ReadTree(c.Tree)
+	if err != nil {
+		finalError.origError = err
+		recoverErr := head.Checkout()
+		if recoverErr != nil {
+			finalError.recoverError = recoverErr
+		}
+		return finalError
+	}
+	return SetHead(c.OID)
 }

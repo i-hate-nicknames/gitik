@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/i-hate-nicknames/gitik/pkg/commit"
-	"github.com/i-hate-nicknames/gitik/pkg/plumbing"
 	"github.com/i-hate-nicknames/gitik/pkg/storage"
 	"github.com/spf13/cobra"
 )
@@ -83,11 +82,7 @@ var checkoutCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
-		err = plumbing.ReadTree(c.Tree)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-		err = commit.SetHead(c.OID)
+		err = c.Checkout()
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
