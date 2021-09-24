@@ -79,9 +79,9 @@ func LogFrom(startFrom storage.OID) ([]Commit, error) {
 // Decode method to retrieve commit back
 func (c Commit) Encode() []byte {
 	var buf bytes.Buffer
-	buf.WriteString(fmt.Sprintf("tree %s\n", string(c.Tree[:])))
+	buf.WriteString(fmt.Sprintf("tree %s\n", c.Tree))
 	if c.Parent != storage.ZeroOID {
-		buf.WriteString(fmt.Sprintf("parent %s\n", string(c.Parent[:])))
+		buf.WriteString(fmt.Sprintf("parent %s\n", c.Parent))
 	}
 	buf.WriteString("\n" + c.Message + "\n")
 	return buf.Bytes()

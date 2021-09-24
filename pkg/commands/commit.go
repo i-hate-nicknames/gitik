@@ -29,7 +29,7 @@ var makeCommitCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(string(treeOID[:]))
+		fmt.Println(treeOID)
 	},
 }
 
