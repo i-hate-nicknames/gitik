@@ -113,7 +113,7 @@ func ReadTree(oid storage.OID) error {
 		if err != nil {
 			return err
 		}
-		data, err := readObject(oid, storage.TypeBlob)
+		data, err := readObject(entry.oid, storage.TypeBlob)
 		if err != nil {
 			return err
 		}
